@@ -4,6 +4,7 @@ using namespace std;
 
 extern "C" {
 #include "libavformat/avformat.h"
+#include "libavutil/time.h"
 }
 
 #pragma comment(lib, "avformat.lib")
@@ -19,9 +20,15 @@ int XError(int errNum)
 	return -1;
 }
 
+static double r2d(AVRational r)
+{
+	return (r.num == 0 || r.den == 0) ? 0.: (double)r.num / (double)r.den;
+}
+
 int main(int argc, char *argv[])
 {
-	char *inUrl = "swxf.flv";
+	//char *inUrl = "swxf.flv";
+	char *inUrl = "parent.flv";
 	char *outUrl = "rtmp://192.168.103.139/live";
 
 	//初始化所有的封装和解封装 flv mp4 mov mp3
@@ -82,6 +89,61 @@ int main(int argc, char *argv[])
 	av_dump_format(octx, 0, outUrl, 1);
 	///////////////////////////////////////////////////////////////////////////////////////////
 
+	// rtmp推流
+	// 打开io(建立协议网络通信连接)
+	re = avio_open(&octx->pb, outUrl, AVIO_FLAG_WRITE);
+	if (!octx->pb) {
+		return XError(re);
+	}
+
+	// 写入头信息
+	re = avformat_write_header(octx, 0);
+	if (re < 0) {
+		return XError(re);
+	}
+	cout << "avfomat_write_header " << re << endl;
+ 
+	//推流每一帧数据
+	AVPacket pkt;
+	long long startTime = av_gettime();  //us
+
+	for (;;) {		
+		re = av_read_frame(ictx, &pkt);
+
+		if (re != 0) {
+			break;
+		}
+		cout <<  pkt.pts << " " << flush;
+		// 计算转换dts pts
+		AVRational itime =  ictx->streams[pkt.stream_index]->time_base;
+		AVRational otime = octx->streams[pkt.stream_index]->time_base;
+		pkt.pts = av_rescale_q_rnd(pkt.pts, itime, otime, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+		pkt.dts = av_rescale_q_rnd(pkt.pts, itime, otime, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+		pkt.duration = av_rescale_q_rnd(pkt.pts, itime, otime, (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+		pkt.pos = -1;
+
+		
+		re = av_interleaved_write_frame(octx, &pkt);
+		
+		//视频帧
+		if (ictx->streams[pkt.stream_index]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO){
+			AVRational tb = ictx->streams[pkt.stream_index]->time_base;
+			//已经过去的时间
+			long long now = av_gettime() - startTime;
+			long long dts = 0;
+
+			dts = pkt.dts * (r2d(tb) * 1000 * 1000);
+			if (dts > now) {
+				av_usleep(dts - now);
+			}
+		}
+	
+		if (re < 0) {
+			return XError(re);
+		}
+
+		//av_packet_unref(&pkt);  //释放pkt->data空间
+	}
 	cout << "file to rtmp test" << endl;
 	getchar();
 
