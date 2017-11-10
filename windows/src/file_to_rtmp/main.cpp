@@ -27,8 +27,8 @@ static double r2d(AVRational r)
 
 int main(int argc, char *argv[])
 {
-	//char *inUrl = "swxf.flv";
-	char *inUrl = "parent.flv";
+	char *inUrl = "swxf.flv";
+	//char *inUrl = "parent.flv";
 	char *outUrl = "rtmp://192.168.103.139/live";
 
 	//初始化所有的封装和解封装 flv mp4 mov mp3
