@@ -3,6 +3,7 @@
 #include <iostream>
 extern "C"
 {
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 }
@@ -11,6 +12,9 @@ using namespace std;
 using namespace cv;
 
 #pragma comment(lib, "swscale.lib")
+#pragma comment(lib, "avcodec.lib")
+#pragma comment(lib, "avutil.lib")
+#pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "opencv_world330d.lib")
 
 int main(int argc, char *argv[])
@@ -28,10 +32,15 @@ int main(int argc, char *argv[])
 
 	// pixel convert context
 	SwsContext *vsc = NULL;
+	AVFrame *yuv = NULL;
 
+	//编码器上下文
+	AVCodecContext   *vc = NULL;
 
 	try {
-		// 1. 打开像机(opencv)
+		av_register_all();
+
+		/// 1. 打开像机(opencv)
 		cam.open(inUrl);
 
 		if (!cam.isOpened()) {
@@ -43,7 +52,7 @@ int main(int argc, char *argv[])
 		int inHeight = cam.get(CAP_PROP_FRAME_HEIGHT);
 
 
-		// 2. init convert context
+		/// 2. init convert context
 		vsc = sws_getCachedContext(vsc,
 			inWidth, inHeight, // src width, height
 			AV_PIX_FMT_BGR24,
@@ -57,7 +66,6 @@ int main(int argc, char *argv[])
 			throw exception("sws_getCacheContext faied");
 		}
 
-		//3. 读取帧
 		for (;;)
 		{
 			// read rtsp frame ---> decode
@@ -74,9 +82,56 @@ int main(int argc, char *argv[])
 			imshow("video", frame);
 			waitKey(1);
 
-			// rgb to yuv
+			/// 3 rgb to yuv
+			// 输出的数据结构
+			yuv = av_frame_alloc();
+			yuv->format = AV_PIX_FMT_YUV420P;
+			yuv->width = inWidth;
+			yuv->height = inHeight;
+			yuv->pts = 0;
 
-			// h264 encode
+			// 分配yuv包含的数据空间
+			int ret = av_frame_get_buffer(yuv, 32);
+			if (ret != 0)
+			{
+				char buf[1024] = {0};
+				av_strerror(ret, buf, sizeof(buf));
+				throw exception("buf");
+			}
+
+			//输入的数据结构
+			uint8_t  *indata[AV_NUM_DATA_POINTERS] = {0};
+			// interlaced:BGR BGR BGR BGR
+			// planed: indata[0]: BBBB  indata[1]: GGGG indata[2]:RRRR
+			indata[0] = frame.data;
+			int insize[AV_NUM_DATA_POINTERS] = { 0 };
+			//一行的数据的字节数（width）
+			insize[0] = frame.cols * frame.elemSize();
+			int h = sws_scale(vsc, indata, insize, 0, frame.rows, // 源数据
+				              yuv->data, yuv->linesize);
+
+			if (h <= 0)
+			{
+				continue;
+			}
+			cout << h << " " << flush;
+
+			/// 4 初始化编码器上下文
+			// a 找到编码器
+			AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+			if (!codec)
+			{
+				throw exception("can not finde h264 encoder!");
+			}
+
+			// b 创建编码器上下文
+			vc = avcodec_alloc_context3(codec);
+			if (!vc)
+			{
+				throw exception("avcodec_alloc_context3 failed!");
+			}
+
+			// c 打开编码器上下文
 
 			// push media
 		}
@@ -93,11 +148,13 @@ int main(int argc, char *argv[])
 			vsc = NULL;
 		}
 
+		if (vc)
+		{
+			avcodec_free_context(&vc);
+		}
 		cerr << ex.what() << endl;
 	}
 	
-	
-
 	
 	getchar();
 	return 0;
