@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 
 	//char *inUrl = "rtsp:://test:test123456@192.168.1.64"; //hikon
 	//char *inUrl = "rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov"; //big bunny
-	//char *inUrl = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
-	char *inUrl = "F:\\FFOutput\\2504.mkv";
+	char *inUrl = "rtmp://live.hkstv.hk.lxdns.com/live/hks";
+	//char *inUrl = "F:\\FFOutput\\2504.mkv";
 	//nginx-rtmp 直播服务器
 	char *outUrl = "rtmp://192.168.1.104/live";
 
@@ -70,6 +70,67 @@ int main(int argc, char *argv[])
 			throw exception("sws_getCacheContext faied");
 		}
 
+		/// 3 rgb to yuv
+		// 输出的数据结构
+		yuv = av_frame_alloc();
+		yuv->format = AV_PIX_FMT_YUV420P;
+		yuv->width = inWidth;
+		yuv->height = inHeight;
+		yuv->pts = 0;
+
+		// 分配yuv包含的数据空间
+		int ret = av_frame_get_buffer(yuv, 32);
+		if (ret != 0)
+		{
+			char buf[1024] = { 0 };
+			av_strerror(ret, buf, sizeof(buf));
+			throw exception("buf");
+		}
+
+		/// 4 初始化编码器上下文
+		// a 找到编码器
+		AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+		if (!codec)
+		{
+			throw exception("can not find h264 encoder!");
+		}
+
+		// b 创建编码器上下文
+		vc = avcodec_alloc_context3(codec);
+		if (!vc)
+		{
+			throw exception("avcodec_alloc_context3 failed!");
+		}
+
+		// c 配置编码器参数
+		vc->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;  //全局参数
+		vc->codec_id = codec->id;
+		vc->thread_count = 8;
+
+		// only for video
+		vc->bit_rate = 50 * 1024 * 8;      // bits size per sec after compressed : 50kB
+		vc->width = inWidth;
+		vc->height = inHeight;
+		vc->time_base = { 1, fps };  // pts * 1 / fps = second 
+		vc->framerate = { fps, 1 };
+
+		// 画面组的大小，多少帧一个关键帧，
+		//设得越大，压缩率越高，同时画质也会更容易损失，性能消耗也会更大
+		vc->gop_size = 5;
+		vc->max_b_frames = 0; // B 帧设为0， 这种情况下pts和dts就会一致
+		vc->pix_fmt = AV_PIX_FMT_YUV420P;
+
+		//d 打开编码器上下文
+		ret = avcodec_open2(vc, NULL, NULL);
+		if (ret != 0)
+		{
+			char buf[1024] = { 0 };
+			av_strerror(ret, buf, sizeof(buf) - 1);
+			throw exception(buf);
+		}
+
+		cout << "avcodec Open 2 encoder success." << endl;
+
 		AVPacket pack;
 		memset(&pack, 0, sizeof(pack));
 
@@ -77,13 +138,13 @@ int main(int argc, char *argv[])
 
 		for (;;)
 		{
-			// read rtsp frame ---> decode
+			/// read rtsp frame ---> decode
 			if (!cam.grab())
 			{
 				continue;
 			}
 
-			// yuv to rgb
+			/// yuv to rgb
 			if (!cam.retrieve(frame))
 			{
 				continue;
@@ -91,23 +152,7 @@ int main(int argc, char *argv[])
 			imshow("video", frame);
 			waitKey(1);
 
-			/// 3 rgb to yuv
-			// 输出的数据结构
-			yuv = av_frame_alloc();
-			yuv->format = AV_PIX_FMT_YUV420P;
-			yuv->width = inWidth;
-			yuv->height = inHeight;
-			yuv->pts = 0;
-
-			// 分配yuv包含的数据空间
-			int ret = av_frame_get_buffer(yuv, 32);
-			if (ret != 0)
-			{
-				char buf[1024] = { 0 };
-				av_strerror(ret, buf, sizeof(buf));
-				throw exception("buf");
-			}
-
+			/// rgb to yuv
 			//输入的数据结构
 			uint8_t  *indata[AV_NUM_DATA_POINTERS] = { 0 };
 			// interlaced:BGR BGR BGR BGR
@@ -122,53 +167,9 @@ int main(int argc, char *argv[])
 			if (h <= 0)
 			{
 				continue;
-			}
+			}					
 
-			/// 4 初始化编码器上下文
-			// a 找到编码器
-			AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_H264);
-			if (!codec)
-			{
-				throw exception("can not find h264 encoder!");
-			}
-
-			// b 创建编码器上下文
-			vc = avcodec_alloc_context3(codec);
-			if (!vc)
-			{
-				throw exception("avcodec_alloc_context3 failed!");
-			}
-
-			// c 配置编码器参数
-			vc->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;  //全局参数
-			vc->codec_id = codec->id;
-			vc->thread_count = 8;
-
-			// only for video
-			vc->bit_rate = 50 * 1024 * 8;      // bits size per sec after compressed : 50kB
-			vc->width = inWidth;
-			vc->height = inHeight;
-			vc->time_base = { 1, fps };  // pts * 1 / fps = second 
-			vc->framerate = {fps, 1};
-
-			// 画面组的大小，多少帧一个关键帧，
-			//设得越大，压缩率越高，同时画质也会更容易损失，性能消耗也会更大
-			vc->gop_size = 5;
-			vc->max_b_frames = 0; // B 帧设为0， 这种情况下pts和dts就会一致
-			vc->pix_fmt = AV_PIX_FMT_YUV420P;
-
-			//d 打开编码器上下文
-			ret = avcodec_open2(vc, NULL, NULL);
-			if (ret != 0)
-			{
-				char buf[1024] = {0};
-				av_strerror(ret, buf, sizeof(buf) - 1);
-				throw exception(buf);
-			}
-
-			cout << "avcodec Open 2 encoder success." << endl;
-
-			// h264 encode
+			/// h264 encode
 			yuv->pts = vpts++;
 
 			ret = avcodec_send_frame(vc, yuv);
@@ -187,7 +188,7 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			// push media
+			/// push media
 		}
 	}
 	catch(exception &ex) {
