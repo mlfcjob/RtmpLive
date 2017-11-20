@@ -14,6 +14,7 @@ using namespace std;
 #pragma comment(lib, "swscale.lib")
 #pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "avutil.lib")
+#pragma comment(lib, "avcodec.lib")
 
 #if defined WIN32 || defined _WIN32
 #include <Windows.h>
@@ -57,7 +58,6 @@ static int XGetCpuNum()
 class CXMediaEncode :public XMediaEncode
 {
 public:
-
 	void XError(int ret)
 	{
 		char buf[1024] = {0};
@@ -80,7 +80,6 @@ public:
 
 		if (vc)
 		{
-			avio_closep(&ic->pb); //ic->pb = NULL;
 			avcodec_free_context(&vc);
 		}
 
@@ -210,93 +209,17 @@ public:
 		return &pack;
 	}
 
-
-	bool InitOutputContext(char *outUrl)
+	AVCodecContext *GetCodecContext(void)
 	{
-		if (!vc) {
-			cout << "Video context has not been initlized" << endl;
-			return false;
-		}
-
-		// a 输出封装器上下文
-		int ret = avformat_alloc_output_context2(&ic, 0, "flv", outUrl);
-		if (ret != 0)
-		{
-			XError(ret);
-			return false;
-		}
-
-		// b 添加视频流
-		vs = avformat_new_stream(ic, NULL);
-		if (!vs)
-		{
-			cout << "avformat new stream failed ." << endl;
-			return false;
-		}
-		vs->codecpar->codec_tag = 0;
-
-		// c 从编码器复制参数
-		avcodec_parameters_from_context(vs->codecpar, vc);
-		av_dump_format(ic, 0, outUrl, 1);
-
-		return true;
+		return vc;
 	}
 
-	bool InitRtmp(char *outUrl)
-	{
-		if (!ic)
-		{
-			cout << "output context has not been initialized" << endl;
-			return false;
-		}
-		ret = avio_open(&ic->pb, outUrl, AVIO_FLAG_WRITE);
-		if (ret != 0)
-		{
-			XError(ret);
-			return false;
-		}
-
-		//写入封装头信息
-		ret = avformat_write_header(ic, 0);
-		if (ret < 0)
-		{
-			XError(ret);
-			return false;
-		}
-
-		return true;
-	}
-
-
-	bool PushMedia(AVPacket *pack)
-	{
-		if (!vs || !ic || !vc)
-		{
-			cout << "vs or ic vc is null" << endl;
-			return false;
-		}
-		// push media
-		pack->pts = av_rescale_q(pack->pts, vc->time_base, vs->time_base);
-		pack->dts = av_rescale_q(pack->dts, vc->time_base, vs->time_base);
-
-		ret = av_interleaved_write_frame(ic, pack);
-		if (ret != 0)
-		{
-			XError(ret);
-			return false;
-		}
-
-		return true;
-
-	}
 private:
 	SwsContext *vsc = NULL;  //像素格式转换上下文 C++ 11  linux: -std c++11
 	AVFrame *yuv = NULL;   //输出的YUV数据
-	AVCodecContext *vc = NULL;  // 编码器上下文
-	AVFormatContext *ic = NULL; // rtmp flv封装头上下文
-	AVStream *vs = NULL;
+	AVCodecContext *vc = 0;  // 编码器上下文
+
 	AVPacket pack = {0};
-	char *outUrl = "rtmp://192.168.103.139/live";
 	int ret = -1;
 	int vpts = 0;
 };

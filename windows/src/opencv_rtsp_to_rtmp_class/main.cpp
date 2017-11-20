@@ -2,29 +2,13 @@
 #include <opencv2/highgui.hpp>
 #include <iostream>
 #include "XMediaEncode.h"
-
-extern "C"
-{
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-}
-
+#include "XRtmp.h"
 
 using namespace std;
 using namespace cv;
 
-#pragma comment(lib, "avcodec.lib")
-#pragma comment(lib, "avutil.lib")
-#pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "opencv_world330d.lib")
 
-
-void XError(int ret)
-{
-	char buf[1024] = { 0 };
-	av_strerror(ret, buf, sizeof(buf));
-	throw exception("buf");
-}
 
 int main(int argc, char *argv[])
 {
@@ -37,13 +21,10 @@ int main(int argc, char *argv[])
 	char *outUrl = "rtmp://192.168.103.139/live";
 
 	// 初始化编码器和像素格式转换对象
-	XMediaEncode *me = XMediaEncode::Get();
-	 
-	//注册所有封装器
-	av_register_all();
+	XMediaEncode *me = XMediaEncode::Get(0);
 
-	//注册所有网络协议
-	avformat_network_init();
+	//封装和推流对象
+	XRtmp *xr = XRtmp::Get(0);
 
 	VideoCapture cam;
 	Mat frame;
@@ -87,18 +68,13 @@ int main(int argc, char *argv[])
 
 
 		/// 5 输出封装器和视频流配置
-		if (!me->InitOutputContext(outUrl))
-		{
-			cout << "init output context failed" <<endl;
-			return -1;
-		}
+		xr->Init(outUrl);
 
-		//6 打开rtmp  网络输出IO	
-		if (!me->InitRtmp(outUrl))
-		{
-			cout << "initRtmp failed" << endl;
-			return -2;
-		}
+		//6 添加视频流
+		xr->AddStream(me->GetCodecContext());
+
+		//7 打开rtmp  网络输出IO	
+		xr->SendHead();
 
 		for (;;)
 		{
@@ -122,6 +98,7 @@ int main(int argc, char *argv[])
 
 			if (!yuv)
 			{
+				cout << "RGBToYuv failed" << endl;
 				continue;
 			}
 
@@ -132,8 +109,9 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			if (!me->PushMedia(pack))
+			if (!xr->SendFrame(pack))
 			{
+				cout << "SendFrame failed" << endl;
 				continue;
 			}
 		}

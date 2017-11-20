@@ -2,6 +2,7 @@
 
 struct AVFrame; //模仿Qt的做法
 struct AVPacket;
+class AVCodecContext;
 
 //音视频编码接口类 
 class XMediaEncode
@@ -32,11 +33,8 @@ public:
 	// 视频编码
 	virtual AVPacket *EncodeVideo(AVFrame *yuv) = 0;
 
-	virtual bool InitOutputContext(char *outUrl) = 0;
-
-	virtual bool InitRtmp(char *outUrl) = 0;
-
-	virtual bool PushMedia(AVPacket *pack)  = 0;
+	// 获取编码器上下文
+	virtual AVCodecContext *GetCodecContext(void) = 0;
 
 	virtual ~XMediaEncode();
 
