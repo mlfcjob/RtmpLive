@@ -12,14 +12,14 @@ public:
 	//初始化封装器上下文
 	virtual bool Init(const char *url) = 0;
 
-	//添加视频或者音频流
-	virtual bool  AddStream(const AVCodecContext *c) = 0;
+	//添加视频或者音频流，失败返回-1，成功返回流索引
+	virtual int  AddStream(const AVCodecContext *c) = 0;
 
 	//打开rtmp网络IO， 发送封装头
 	virtual bool SendHead() = 0;
 
 	// 发送rtmp帧
-	virtual bool SendFrame(AVPacket *pkt) = 0;
+	virtual bool SendFrame(AVPacket *pkt, int streamIndex = 0) = 0;
 
 	virtual ~XRtmp();
 

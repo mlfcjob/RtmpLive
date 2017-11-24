@@ -4,30 +4,25 @@
 #include <iostream>
 #include <list>
 
+
 using namespace std;
 
 class CXAudioRecord :public XAudioRecord
 {
 public:
-	bool isExit = false;
-	QMutex mutex;
-	list <XData> datas;
-	int maxList = 100;
-
 	void run()
 	{
 		cout << "audio record thread" << endl;
 		// 一次读取一帧音频的字节数
 		int readSize = nbSamples * channels * sampleByte;
-
+		char *buf = new char[readSize];
 
 		while (!isExit)
 		{
-			char *buf = new char[readSize];
 			//读取已录制的音频
 			if (input->bytesReady() < readSize)
 			{
-				QThread::msleep(1);
+				msleep(1);
 				continue;
 			}
 
@@ -44,42 +39,14 @@ public:
 
 			if (size != readSize)
 			{
-				delete buf;
 				continue;
 			}
 
 			//已经读取一帧
-			XData d;
-			d.data = buf;
-			d.size = readSize;
-
-			mutex.lock();
-			if (datas.size() > maxList)
-			{
-				datas.front().Drop();
-				datas.pop_front();
-			}
-
-			datas.push_back(d);
-			mutex.unlock();
+			Push(XData(buf, readSize));
 		}
-
+		delete buf;
 		cout << "退出 audio record thread" << endl;
-	}
-
-	XData Pop()
-	{
-		mutex.lock();
-		if (datas.empty())
-		{
-			mutex.unlock();
-			return XData();
-		}
-		XData d = datas.front();
-		datas.pop_front();
-
-		mutex.unlock();
-		return d;
 	}
 
 	// start record
@@ -114,18 +81,13 @@ public:
 			return false;
 		}
 
-		QThread::start();
-		isExit = false;
-
 		return true;
 	}
 
 	//stop record
 	virtual void Stop() 
 	{
-		isExit = true;
-		wait();  //等待当前线程退出
-
+		XDataThread::Stop();
 		if (input) {
 			input->stop();
 		}

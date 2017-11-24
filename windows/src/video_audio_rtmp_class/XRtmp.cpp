@@ -47,11 +47,11 @@ public:
 	}
 
 	//添加视频或者音频流
-	bool  AddStream(const AVCodecContext *c)
+	int AddStream(const AVCodecContext *c)
 	{	
 		if (!c)
 		{
-			return false;
+			return -1;
 		}
 
 		// b 添加视频流
@@ -59,7 +59,7 @@ public:
 		if (!st)
 		{
 			cout << "avformat new stream failed ." << endl;
-			return false;
+			return -1;
 		}
 		st->codecpar->codec_tag = 0;
 
@@ -78,7 +78,7 @@ public:
 			as = st;
 		}
 
-		return true;
+		return st->index;
 	}
 
 	//打开rtmp网络IO， 发送封装头
@@ -102,9 +102,11 @@ public:
 		return true;
 	}
 
-	bool SendFrame(AVPacket *pkt)
+	bool SendFrame(AVPacket *pkt, int streamIndex)
 	{
 		if (!pkt || pkt->size <= 0 || !pkt->data) return false;
+
+		pkt->stream_index = streamIndex;
 
 		AVRational stime;
 		AVRational dtime;

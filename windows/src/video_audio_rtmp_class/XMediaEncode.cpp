@@ -154,7 +154,7 @@ public:
 	{
 		//a 找到编码器
 		//b 创建编码器上下文
-		if (!CreateCodec(AV_CODEC_ID_H264))
+		if (!(vc = CreateCodec(AV_CODEC_ID_H264)))
 		{
 			return false;
 		}
@@ -176,7 +176,7 @@ public:
 	// 音频编码器初始化
 	bool InitAudioCodec()
 	{
-		if (!CreateCodec(AV_CODEC_ID_AAC))
+		if (!(ac = CreateCodec(AV_CODEC_ID_AAC)))
 		{
 			return false;
 		}
@@ -320,35 +320,35 @@ private:
 		return true;
 	}
 
-	bool CreateCodec(AVCodecID cid)
+	AVCodecContext* CreateCodec(AVCodecID cid)
 	{
 		//初始化编码器
 		AVCodec  *codec = avcodec_find_encoder(cid);
 		if (!codec)
 		{
 			cout << "avcodec_find_encoder failed" << endl;
-			return false;
+			return NULL;
 		}
 
-		ac = avcodec_alloc_context3(codec);
-		if (!ac)
+		AVCodecContext *c = avcodec_alloc_context3(codec);
+		if (!c)
 		{
 			cout << "avcodec_alloc_context3 failed" << endl;
-			return false;
+			return NULL;
 		}
 
 		cout << "avcodec_alloc_context3 success" << endl;
 
-		ac->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-		ac->thread_count = XGetCpuNum();
-		ac->codec_id = cid;
+		c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+		c->thread_count = XGetCpuNum();
+		c->codec_id = cid;
 
-		return true;
+		return c;
 	}
 
 	SwsContext *vsc = NULL;   // 像素格式转换上下文 C++ 11  linux: -std c++11
 	AVFrame *yuv = NULL;      // 输出的YUV数据
-	AVCodecContext *vc = 0;   // 编码器上下文
+	//AVCodecContext *vc = 0;   // 编码器上下文
 	SwrContext *asc = NULL;   // 音频重采样上下文
 	AVFrame *pcm = NULL;      // 重采样输出的pcm
 

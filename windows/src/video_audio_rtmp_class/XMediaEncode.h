@@ -63,6 +63,7 @@ public:
 	virtual ~XMediaEncode();
 
 	AVCodecContext *ac = 0;  // рТф╣╠ЮбКфВиообнд
+	AVCodecContext *vc = 0;
 
 protected:
 	XMediaEncode();
