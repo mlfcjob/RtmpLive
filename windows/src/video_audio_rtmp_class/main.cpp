@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 		{
 			vd.pts = vd.pts - beginTime;
 			XData yuv = xe->RGBToYUV(vd);
-			//vd.Drop();
+			vd.Drop();
 
 			XData pkt = xe->EncodeVideo(yuv);
 			if (pkt.size > 0)

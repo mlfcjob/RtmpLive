@@ -94,15 +94,6 @@ public:
 		}
 	}
 
-	// 调用者清理空间
-	XData Pop()
-	{
-		mutex.lock();
-		XData d = datas.front();
-		mutex.unlock();
-		return d;
-	}
-
 	VideoCapture cam;
 	Mat  frame;
 private:
