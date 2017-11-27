@@ -32,7 +32,7 @@ public:
 			}
 
 			//确保数据是连续的
-			XData d((char*)frame.data, frame.cols * frame.rows * frame.elemSize());
+			XData d((char*)frame.data, frame.cols * frame.rows * frame.elemSize(), GetCurTime());
 			Push(d);	
 		}
 	}

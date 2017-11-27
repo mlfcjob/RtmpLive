@@ -1,7 +1,6 @@
 #pragma once
 
-struct AVFrame; //模仿Qt的做法
-struct AVPacket;
+#include "XData.h"
 class AVCodecContext;
 
 enum XSampleFMT
@@ -37,7 +36,7 @@ public:
 	//初始化像素格式转换的上下文
 	virtual bool InitScale() = 0;
 
-	virtual AVFrame* RGBToYUV(char *rgb) = 0;
+	virtual XData RGBToYUV(XData rgb) = 0;
 
 	// 视频编码器初始化
 	virtual bool InitVideoCodec() = 0;
@@ -46,7 +45,7 @@ public:
 	virtual bool InitAudioCodec() = 0;
 
 	// 视频编码
-	virtual AVPacket *EncodeVideo(AVFrame *yuv) = 0;
+	virtual XData EncodeVideo(XData yuv) = 0;
 
 	// 获取编码器上下文
 	virtual AVCodecContext *GetCodecContext(void) = 0;
@@ -55,10 +54,10 @@ public:
 	virtual bool InitResample() = 0;
 
 	// 音频重采样 (返回值无需调用者清理)
-	virtual AVFrame *Resample(char *pcm) = 0;
+	virtual XData Resample(XData frame) = 0;
 
 	// 音频编码 (返回值无需调用者清理)
-	virtual AVPacket *EncodeAudio(AVFrame *pcm) = 0;
+	virtual XData EncodeAudio(XData frame) = 0;
 
 	virtual ~XMediaEncode();
 

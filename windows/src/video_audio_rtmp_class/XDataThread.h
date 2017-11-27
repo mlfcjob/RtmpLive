@@ -22,6 +22,8 @@ public:
 	//退出线程并等待线程退出（阻塞函数）
 	virtual void Stop();
 
+	virtual void Clear();
+
 	XDataThread();
 	~XDataThread();
 

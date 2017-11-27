@@ -130,12 +130,14 @@ public:
 		return true;
 	}
 
-	AVFrame  *RGBToYUV(char *rgb) 
+	XData RGBToYUV(XData d) 
 	{
+		XData r;
+		r.pts = d.pts;
 		uint8_t *indata[AV_NUM_DATA_POINTERS] = { 0 };
 		int insize[AV_NUM_DATA_POINTERS] = { 0 };
 
-		indata[0] = (unsigned char*)rgb;
+		indata[0] = (unsigned char*)d.data;
 		insize[0] = inWidth * inPixSize;
 
 		int h = sws_scale(vsc, indata, insize, 0, inHeight, yuv->data, yuv->linesize);
@@ -143,10 +145,20 @@ public:
 
 		if (h < 0)
 		{
-			return NULL;
+			return r;
 		}
 
-		return yuv;
+		yuv->pts = d.pts;
+
+		r.data = (char*)yuv;
+		int *p = yuv->linesize;
+		while (*p)
+		{
+			r.size += (*p) * outHeight;
+			p++;
+		}
+
+		return r;
 	}
 
 	// 编码器的初始化
@@ -163,7 +175,7 @@ public:
 		vc->bit_rate = bitrate;  // 50kB
 		vc->width = outWidth;
 		vc->height = outHeight;
-		vc->time_base = {1, fps};
+		//vc->time_base = {1, fps};
 		vc->framerate = {fps, 1};
 		vc->gop_size = 50;
 		vc->max_b_frames = 0;
@@ -191,58 +203,82 @@ public:
 		return OpenCodec(&ac);
 	}
 
+	long long lasta = -1;
 	// 音频编码
-	AVPacket *EncodeAudio(AVFrame *pcm)
+	XData EncodeAudio(XData frame)
 	{
+		XData r;
+		if (frame.size <= 0 || !frame.data)
+			return r;
+
+		AVFrame *p = (AVFrame*)frame.data;
+		if (lasta == p->pts)
+		{
+			p->pts += 1200;
+		}
+
+		lasta = p->pts;
+
 		// pts运算
 		// nb_sample / smaple_rate  = 一帧音频的秒数
 		// timebase pts = sec * timebase.den
-		pcm->pts = apts;
-		apts += av_rescale_q(pcm->nb_samples, { 1, sampleRate }, ac->time_base);
+		//p->pts = av_rescale_q(p->pts, { 1, 1000000 }, ac->time_base);
 
-
-		ret = avcodec_send_frame(ac, pcm);
+		ret = avcodec_send_frame(ac, p);
 		if (ret != 0)
 		{
-			return NULL;
+			return r;
 		}
 
 		av_packet_unref(&apack);
 		ret = avcodec_receive_packet(ac, &apack);
 		if (ret != 0)
 		{
-			return NULL;
+			return r;
 		}
 		cout << apack.size << " " << flush;
-		return &apack;
+
+		r.data = (char*)&apack;
+		r.size = apack.size;
+		r.pts = frame.pts;
+		return r;
 	}
 
-	AVPacket *EncodeVideo(AVFrame *frame)
+	XData EncodeVideo(XData frame)
 	{
 		av_packet_unref(&vpack);
-		yuv->pts = vpts++;
+		XData r;
+		if (frame.size <= 0 || !frame.data)
+			return r;
+
+		AVFrame *p = (AVFrame*)frame.data;
+
+		//frame->pts = vpts++;
 
 		if (!yuv || !vc)
 		{
 			cout << "yuv or ic is NULL" << endl;
-			return NULL;
+			return r;
 		}
 
-		ret = avcodec_send_frame(vc, frame);
+		ret = avcodec_send_frame(vc, p);
 		if (ret != 0)
 		{
 			XError(ret);
-			return NULL;
+			return r;
 		}
 
 		ret = avcodec_receive_packet(vc, &vpack);
 
 		if (ret != 0 || vpack.size <= 0)
 		{
-			return NULL;
+			return r;
 		}
 
-		return &vpack;
+		r.data = (char*)&vpack;
+		r.size = vpack.size;
+		r.pts = frame.pts;
+		return r;
 	}
 
 	AVCodecContext *GetCodecContext(void)
@@ -289,19 +325,24 @@ public:
 	}
 
 	// 音频重采样
-	AVFrame *Resample(char *data)
+	XData Resample(XData d)
 	{
+		XData r;
 		//重采样源数据
 		const uint8_t *indata[AV_NUM_DATA_POINTERS] = { 0 };
-		indata[0] = (uint8_t *)data;
+		indata[0] = (uint8_t *)d.data;
 		int len = swr_convert(asc, pcm->data, pcm->nb_samples,  //输出参数：存储地址和样本数量
 			indata, pcm->nb_samples);
 
 		if (len <= 0)
 		{
-			return NULL;
+			return r;
 		}
-		return pcm;
+		pcm->pts = d.pts;
+		r.data = (char*)pcm;
+		r.size = pcm->nb_samples * pcm->channels * 2;
+		r.pts = d.pts;
+		return r;
 	}
 
 private:
@@ -342,6 +383,7 @@ private:
 		c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 		c->thread_count = XGetCpuNum();
 		c->codec_id = cid;
+		c->time_base = { 1, 1000000 };
 
 		return c;
 	}

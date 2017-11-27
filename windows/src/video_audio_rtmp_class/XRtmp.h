@@ -1,7 +1,9 @@
 #pragma once
 
+#include "Xdata.h"
 class AVCodecContext;
 class AVPacket;
+
 
 class XRtmp
 {
@@ -19,7 +21,7 @@ public:
 	virtual bool SendHead() = 0;
 
 	// ∑¢ÀÕrtmp÷°
-	virtual bool SendFrame(AVPacket *pkt, int streamIndex = 0) = 0;
+	virtual bool SendFrame(XData d, int streamIndex = 0) = 0;
 
 	virtual ~XRtmp();
 

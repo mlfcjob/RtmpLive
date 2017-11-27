@@ -54,3 +54,14 @@ void XDataThread::Stop()
 	isExit = true;
 	wait();
 }
+
+void XDataThread::Clear()
+{
+	mutex.lock();
+	while (!datas.empty())
+	{
+		datas.front().Drop();
+		datas.pop_front();
+	}
+	mutex.unlock();
+}

@@ -21,6 +21,8 @@ int main(int argc, char *argv[])
 	int sampleByte = 2;
 	int nbSample = 1024;
 
+	long long beginTime = GetCurTime();
+
 	XMediaEncode *xe = XMediaEncode::Get(0);
 
 	// 0 打开摄像机
@@ -33,6 +35,7 @@ int main(int argc, char *argv[])
 	}
 	cout << "打开摄像机成功" << endl;
 	
+	xv->Clear();
 	xv->Start();
 
 	// 1 qt音频开始录制
@@ -48,7 +51,9 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	ar->Clear();
 	ar->Start();
+
 	/// 1-1 视频编码类
 	xe->inWidth = xv->width;
 	xe->inHeight = xv->height;
@@ -145,14 +150,15 @@ int main(int argc, char *argv[])
 		//处理音频
 		if (ad.size > 0)
 		{
+			ad.pts - beginTime;
 			//已经读一帧源数据
 			//重采样源数据
-			AVFrame *pcm = xe->Resample(ad.data);
+			XData pcm = xe->Resample(ad);
 			ad.Drop();
 
 			//编码
-			AVPacket *pkt = xe->EncodeAudio(pcm);
-			if (pkt)
+			XData pkt = xe->EncodeAudio(pcm);
+			if (pkt.size > 0)
 			{
 				// 推流
 				if (xr->SendFrame(pkt, aindex))
@@ -165,11 +171,12 @@ int main(int argc, char *argv[])
 		// 处理视频
 		if (vd.size > 0)
 		{
-			AVFrame *yuv = xe->RGBToYUV(vd.data);
+			vd.pts = vd.pts - beginTime;
+			XData yuv = xe->RGBToYUV(vd);
 			//vd.Drop();
 
-			AVPacket *pkt = xe->EncodeVideo(yuv);
-			if (pkt)
+			XData pkt = xe->EncodeVideo(yuv);
+			if (pkt.size > 0)
 			{
 				if (xr->SendFrame(pkt, vindex))
 				{

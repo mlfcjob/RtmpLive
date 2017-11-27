@@ -4,7 +4,6 @@
 #include <iostream>
 #include <list>
 
-
 using namespace std;
 
 class CXAudioRecord :public XAudioRecord
@@ -43,7 +42,8 @@ public:
 			}
 
 			//已经读取一帧
-			Push(XData(buf, readSize));
+			long long pts = GetCurTime();  //us
+			Push(XData(buf, readSize, pts));
 		}
 		delete buf;
 		cout << "退出 audio record thread" << endl;

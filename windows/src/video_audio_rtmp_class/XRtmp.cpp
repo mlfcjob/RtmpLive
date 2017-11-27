@@ -102,10 +102,11 @@ public:
 		return true;
 	}
 
-	bool SendFrame(AVPacket *pkt, int streamIndex)
+	bool SendFrame(XData d, int streamIndex)
 	{
-		if (!pkt || pkt->size <= 0 || !pkt->data) return false;
+		if (!d.data || d.size <= 0) return false;
 
+		AVPacket *pkt = (AVPacket *)d.data;
 		pkt->stream_index = streamIndex;
 
 		AVRational stime;
@@ -127,6 +128,7 @@ public:
 		// push media
 		pkt->pts = av_rescale_q(pkt->pts, stime, dtime);
 		pkt->dts = av_rescale_q(pkt->dts, stime, dtime);
+		pkt->duration = av_rescale_q(pkt->duration, stime, dtime);
 
 		int ret = av_interleaved_write_frame(ic, pkt);
 		if (ret != 0)
