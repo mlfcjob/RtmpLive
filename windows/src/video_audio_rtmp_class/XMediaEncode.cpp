@@ -141,10 +141,9 @@ public:
 		insize[0] = inWidth * inPixSize;
 
 		int h = sws_scale(vsc, indata, insize, 0, inHeight, yuv->data, yuv->linesize);
-		cout << "sws_scale: " << h << endl;
-
 		if (h < 0)
 		{
+			cout << "sws_scale failed" << endl;
 			return r;
 		}
 
@@ -218,11 +217,6 @@ public:
 		}
 
 		lasta = p->pts;
-
-		// pts运算
-		// nb_sample / smaple_rate  = 一帧音频的秒数
-		// timebase pts = sec * timebase.den
-		//p->pts = av_rescale_q(p->pts, { 1, 1000000 }, ac->time_base);
 
 		ret = avcodec_send_frame(ac, p);
 		if (ret != 0)

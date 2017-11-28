@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 		//处理音频
 		if (ad.size > 0)
 		{
-			ad.pts - beginTime;
+			ad.pts = ad.pts - beginTime;
 			//已经读一帧源数据
 			//重采样源数据
 			XData pcm = xe->Resample(ad);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 				// 推流
 				if (xr->SendFrame(pkt, aindex))
 				{
-					cout << "#" << flush;
+					cout << "Audio #." << flush;
 				}
 			}
 		}
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 			{
 				if (xr->SendFrame(pkt, vindex))
 				{
-					cout << "@" << endl;
+					cout << "Video @" << endl;
 				}
 			}
 		}		
