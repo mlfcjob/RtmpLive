@@ -230,7 +230,6 @@ public:
 		{
 			return r;
 		}
-		cout << apack.size << " " << flush;
 
 		r.data = (char*)&apack;
 		r.size = apack.size;

@@ -21,8 +21,6 @@ int main(int argc, char *argv[])
 	int sampleByte = 2;
 	int nbSample = 1024;
 
-	long long beginTime = GetCurTime();
-
 	XMediaEncode *xe = XMediaEncode::Get(0);
 
 	// 0 打开摄像机
@@ -135,6 +133,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	long long beginTime = GetCurTime();
 	for (;;)
 	{
 		// 一次读取一帧音频
@@ -163,7 +162,7 @@ int main(int argc, char *argv[])
 				// 推流
 				if (xr->SendFrame(pkt, aindex))
 				{
-					cout << "Audio #." << flush;
+					cout << "Audio #." << endl;
 				}
 			}
 		}
