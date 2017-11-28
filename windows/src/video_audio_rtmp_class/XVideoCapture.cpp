@@ -12,6 +12,8 @@ using namespace std;
 class CXVideoCapture : public XVideoCapture
 {
 public:
+
+	bilateraFilter();
 	void run()
 	{
 		cout << "视频抓取线程" << endl;
