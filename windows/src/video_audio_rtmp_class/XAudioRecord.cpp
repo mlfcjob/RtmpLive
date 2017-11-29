@@ -13,7 +13,7 @@ public:
 	{
 		cout << "audio record thread" << endl;
 		// 一次读取一帧音频的字节数
-		int readSize = nbSamples * channels * sampleByte;
+		int readSize = nbSample * channels * sampleByte;
 		char *buf = new char[readSize];
 
 		while (!isExit)

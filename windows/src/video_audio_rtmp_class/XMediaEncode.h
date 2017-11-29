@@ -59,6 +59,8 @@ public:
 	// 音频编码 (返回值无需调用者清理)
 	virtual XData EncodeAudio(XData frame) = 0;
 
+	virtual void Close() = 0;
+
 	virtual ~XMediaEncode();
 
 	AVCodecContext *ac = 0;  // 音频编码器上下文

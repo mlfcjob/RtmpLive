@@ -12,8 +12,6 @@ using namespace std;
 class CXVideoCapture : public XVideoCapture
 {
 public:
-
-	bilateraFilter();
 	void run()
 	{
 		cout << "视频抓取线程" << endl;
@@ -34,6 +32,15 @@ public:
 			}
 
 			//确保数据是连续的
+			fmutex.lock();
+			for (int i = 0; i < filters.size(); i++)
+			{
+				Mat des;
+				filters[i]->Filter(&frame, &des);
+				frame = des;
+			}
+			fmutex.unlock();
+
 			XData d((char*)frame.data, frame.cols * frame.rows * frame.elemSize(), GetCurTime());
 			Push(d);	
 		}

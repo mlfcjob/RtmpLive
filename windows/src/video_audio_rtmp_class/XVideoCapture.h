@@ -1,6 +1,8 @@
 #pragma once
 
 #include "XDataThread.h"
+#include "XFilter.h"
+#include <vector>
 
 enum XVIDEO_TYPE {
 	XVIDEO_OPENCV,
@@ -24,7 +26,16 @@ public:
 	// πÿ±’ ”∆µ
 	virtual void Stop() = 0;
 
+	void AddFilter(XFilter *f)
+	{
+		fmutex.lock();
+		filters.push_back(f);
+		fmutex.unlock();
+	}
+
 protected:
+	QMutex fmutex;
+	std::vector <XFilter*> filters;
 	XVideoCapture();
 };
 
