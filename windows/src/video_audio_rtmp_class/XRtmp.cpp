@@ -65,7 +65,7 @@ public:
 
 		// c 从编码器复制参数
 		avcodec_parameters_from_context(st->codecpar, c);
-		av_dump_format(ic, 0, url.c_str(), 1);
+		//av_dump_format(ic, 0, url.c_str(), 1);
 
 		if (c->codec_type == AVMEDIA_TYPE_VIDEO)
 		{

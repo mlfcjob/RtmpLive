@@ -11,7 +11,6 @@ class CXAudioRecord :public XAudioRecord
 public:
 	void run()
 	{
-		cout << "audio record thread" << endl;
 		// 一次读取一帧音频的字节数
 		int readSize = nbSample * channels * sampleByte;
 		char *buf = new char[readSize];
@@ -46,7 +45,6 @@ public:
 			Push(XData(buf, readSize, pts));
 		}
 		delete buf;
-		cout << "退出 audio record thread" << endl;
 	}
 
 	// start record
@@ -69,7 +67,6 @@ public:
 			cout << "AudioFormat not supported" << endl;
 			fmt = info.nearestFormat(fmt);
 		}
-		cout << "success" << endl;
 
 	    input = new QAudioInput(fmt);
 

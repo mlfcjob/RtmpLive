@@ -6,7 +6,7 @@ using namespace std;
 
 XBilateralFilter::XBilateralFilter()
 {
-	paras.insert(make_pair("d", 5));
+	paras.insert(make_pair("d", 3));
 }
 
 

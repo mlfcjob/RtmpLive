@@ -1,16 +1,14 @@
 #include <QtCore/QCoreApplication>
-#include <iostream>
 #include "XController.h"
-
-using namespace std;
 
 int main(int argc, char *argv[])
 {
 	QCoreApplication a(argc, argv);
+	const char *outUrl = "rtmp://192.168.103.139/live";
 
     XController::Get()->Stop();
     XController::Get()->camIndex = 0;
-	XController::Get()->outUrl = "rtmp://192.168.103.139/live";
+	XController::Get()->outUrl = outUrl;
     XController::Get()->Start();
 
 	XController::Get()->wait();

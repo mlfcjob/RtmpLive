@@ -14,8 +14,6 @@ class CXVideoCapture : public XVideoCapture
 public:
 	void run()
 	{
-		cout << "视频抓取线程" << endl;
-		
 		Mat frame;
 		while (!isExit)
 		{
@@ -77,7 +75,6 @@ public:
 			return false;
 		}
 
-		cout << camIndex << "open success" << endl;
 		width = cam.get(CAP_PROP_FRAME_WIDTH);
 		height = cam.get(CAP_PROP_FRAME_HEIGHT);
 		fps = cam.get(CAP_PROP_FPS);

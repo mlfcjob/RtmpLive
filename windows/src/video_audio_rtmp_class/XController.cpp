@@ -48,9 +48,9 @@ void XController::run()
 				if (pkt.size > 0)
 				{
 					// 推流
-					if (XRtmp::Get()->SendFrame(pkt, aindex))
+					if (!XRtmp::Get()->SendFrame(pkt, aindex))
 					{
-						cout << "Audio #." << endl;
+						cout << "push audio error #." << endl;
 					}
 				}
 			}
@@ -65,9 +65,9 @@ void XController::run()
 				XData pkt = XMediaEncode::Get()->EncodeVideo(yuv);
 				if (pkt.size > 0)
 				{
-					if (XRtmp::Get()->SendFrame(pkt, vindex))
+					if (!XRtmp::Get()->SendFrame(pkt, vindex))
 					{
-						cout << "Video @" << endl;
+						cout << " push Video error @" << endl;
 					}
 				}
 			}		
@@ -109,11 +109,10 @@ bool XController::Start()
 	}
 	else
 	{
-		err = "请设置相机参数";
-		cout << "请设置相机参数" << endl;
+		err = "2 请设置相机参数";
+		cout << err << endl;
+		return false;
 	}
-
-	cout << "相机打开成功"<< endl;
 
 	// 3 QT音频开始录制
 	if (!XAudioRecord::Get()->Init())
@@ -122,8 +121,6 @@ bool XController::Start()
 		cout << err << endl;
 		return false;
 	}
-
-	cout << "录音设备打开成功" << endl;
 
 	XAudioRecord::Get()->Start();
 	XVideoCapture::Get()->Start();
@@ -141,8 +138,6 @@ bool XController::Start()
 		cout << err << endl;
 		return false;
 	}
-
-	cout << "视频像素格式转换上下文打开成功"  << endl;
 	
 	// 5 音频重采样上下文初始化
 	XMediaEncode::Get()->channels = XAudioRecord::Get()->channels;
@@ -155,9 +150,6 @@ bool XController::Start()
 		return false;
 	}
 
-	cout << "音频重采样上下文打开成功" << endl;
-
-
 	// 6 初始化音频编码器
 	if (!XMediaEncode::Get()->InitAudioCodec())
 	{
@@ -165,8 +157,6 @@ bool XController::Start()
 		cout << err << endl;
 		return false;
 	}
-
-	cout << "初始化音频编码器成功" << endl;
 
 	// 7 初始化视频编码器
 	if (!XMediaEncode::Get()->InitVideoCodec())
@@ -176,7 +166,6 @@ bool XController::Start()
 		return false;
 	}
 
-	cout << "初始化视频编码器成功" << endl;
 
 	// 8 创建输出封装器上下文
 	if (!XRtmp::Get()->Init(outUrl.c_str()))
@@ -185,8 +174,6 @@ bool XController::Start()
 		cout << err << endl;
 		return false;
 	}
-
-	cout << "创建输出封装器上下文成功" << endl;
 
 	// 9 添加音视频流
 	vindex =  XRtmp::Get()->AddStream(XMediaEncode::Get()->vc);
@@ -199,12 +186,10 @@ bool XController::Start()
 		return false;
 	}
 
-	cout << "添加音视频流成功" << endl;
-
 	// 10 写入rtmp封装头
 	if (!XRtmp::Get()->SendHead())
 	{
-		err  = "发送封装头失败";
+		err  = "10 发送封装头失败";
 		cout << err << endl;
 		return false;
 	}

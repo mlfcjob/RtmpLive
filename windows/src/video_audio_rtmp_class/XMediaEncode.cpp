@@ -301,8 +301,6 @@ public:
 			XError(ret);
 		}
 
-		cout << "swr init success." << endl;
-
 		// 音频重采样输出空间分配
 		pcm = av_frame_alloc();
 		pcm->format = outSampleFmt;
@@ -350,7 +348,6 @@ private:
 			return false;
 		}
 
-		std::cout << "avcodec open success" << endl;
 		return true;
 	}
 
@@ -370,8 +367,6 @@ private:
 			cout << "avcodec_alloc_context3 failed" << endl;
 			return NULL;
 		}
-
-		cout << "avcodec_alloc_context3 success" << endl;
 
 		c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 		c->thread_count = XGetCpuNum();
