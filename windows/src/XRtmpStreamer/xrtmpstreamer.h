@@ -9,6 +9,7 @@ class XRtmpStreamer : public QWidget
 
 public:
 	XRtmpStreamer(QWidget *parent = Q_NULLPTR);
+	~XRtmpStreamer();
 
 public slots:
 	void Stream();
