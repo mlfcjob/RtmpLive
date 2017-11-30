@@ -56,4 +56,5 @@ void XRtmpStreamer::Stream()
 XRtmpStreamer::~XRtmpStreamer()
 {
 	XController::Get()->wait();
+	XController::Get()->Stop();
 }

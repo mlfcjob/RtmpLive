@@ -1,4 +1,5 @@
 <RCC>
-    <qresource prefix="XRtmpStreamer">
-    </qresource>
+  <qresource prefix="XRtmpStreamer">
+    <file>Resources/push.ico</file>
+  </qresource>
 </RCC>

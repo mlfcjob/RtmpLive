@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>XRtmpStreamer</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="xrtmpstreamer.qrc">
+    <normaloff>:/XRtmpStreamer/Resources/push.ico</normaloff>:/XRtmpStreamer/Resources/push.ico</iconset>
+  </property>
   <property name="styleSheet">
    <string notr="true">QLabel
 {
@@ -65,6 +69,9 @@ font: 75 12pt &quot;黑体&quot;;
      <width>371</width>
      <height>20</height>
     </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
    </property>
   </widget>
   <widget class="QLabel" name="label">
