@@ -130,9 +130,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="XRtmpStreamer.rc" />
+    <Image Include="Resources\push.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resources\push.ico" />
+    <ResourceCompile Include="XRtmpStreamer.rc" />
   </ItemGroup>
 </Project>
